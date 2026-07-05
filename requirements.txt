@@ -1,0 +1,15 @@
+# SQL Learning IDE — backend dependencies
+fastapi>=0.110
+uvicorn[standard]>=0.29
+groq>=1.0.0
+python-dotenv>=1.0
+pydantic>=2.6
+
+# Optional: enable real MySQL execution instead of the built-in SQLite engine.
+# Install these + set DB_BACKEND=mysql and MYSQL_URL in .env
+# PyMySQL>=1.1
+# SQLAlchemy>=2.0
+
+# Optional: higher-fidelity MySQL->SQLite dialect translation for the executor.
+# If installed, student MySQL syntax is transpiled before running on SQLite.
+# sqlglot>=25.0

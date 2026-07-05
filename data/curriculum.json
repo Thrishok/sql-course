@@ -1,0 +1,287 @@
+{
+  "dataset": {
+    "id": "shop",
+    "title": "Shop database",
+    "dialect": "MySQL",
+    "description": "A small online-shop database with customers, products, orders and order_items. Every exercise runs against this data.",
+    "schema_file": "schema.sql",
+    "tables": [
+      {
+        "name": "customers",
+        "columns": ["id INT PK", "name VARCHAR", "city VARCHAR", "country VARCHAR", "signup_date DATE"]
+      },
+      {
+        "name": "products",
+        "columns": ["id INT PK", "name VARCHAR", "category VARCHAR", "price DECIMAL", "stock INT"]
+      },
+      {
+        "name": "orders",
+        "columns": ["id INT PK", "customer_id INT FK", "order_date DATE", "status VARCHAR"]
+      },
+      {
+        "name": "order_items",
+        "columns": ["id INT PK", "order_id INT FK", "product_id INT FK", "quantity INT", "unit_price DECIMAL"]
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "title": "SQL Foundations",
+      "summary": "Pull data out of a single table.",
+      "lessons": [
+        {
+          "id": "l1",
+          "title": "SELECT and FROM",
+          "objective": "Choose which columns to return from a table.",
+          "concepts": ["SELECT", "FROM", "column list"],
+          "exercise": {
+            "prompt": "Retrieve the name and city of every customer.",
+            "starter_sql": "-- Return two columns: name and city\nSELECT\nFROM customers;",
+            "solution_sql": "SELECT name, city FROM customers;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l2",
+          "title": "SELECT DISTINCT",
+          "objective": "Remove duplicate rows from a result.",
+          "concepts": ["DISTINCT"],
+          "exercise": {
+            "prompt": "List each distinct country that customers come from (one row per country).",
+            "starter_sql": "SELECT country FROM customers;",
+            "solution_sql": "SELECT DISTINCT country FROM customers;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l3",
+          "title": "LIMIT",
+          "objective": "Return only the first N rows.",
+          "concepts": ["LIMIT", "ORDER BY"],
+          "exercise": {
+            "prompt": "Show the first 3 products ordered by id (return all columns).",
+            "starter_sql": "SELECT * FROM products\n-- order by id, then limit to 3\n;",
+            "solution_sql": "SELECT * FROM products ORDER BY id LIMIT 3;",
+            "order_matters": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "title": "Filtering Rows",
+      "summary": "Keep only the rows you care about with WHERE.",
+      "lessons": [
+        {
+          "id": "l4",
+          "title": "The WHERE clause",
+          "objective": "Filter rows with a single condition.",
+          "concepts": ["WHERE", "="],
+          "exercise": {
+            "prompt": "Find all products in the 'Electronics' category. Return name and price.",
+            "starter_sql": "SELECT name, price FROM products\nWHERE ;",
+            "solution_sql": "SELECT name, price FROM products WHERE category = 'Electronics';",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l5",
+          "title": "AND / OR",
+          "objective": "Combine multiple conditions.",
+          "concepts": ["AND", "OR", "<"],
+          "exercise": {
+            "prompt": "Find Electronics products that cost less than 100. Return name and price.",
+            "starter_sql": "SELECT name, price FROM products\nWHERE ;",
+            "solution_sql": "SELECT name, price FROM products WHERE category = 'Electronics' AND price < 100;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l6",
+          "title": "BETWEEN, IN and LIKE",
+          "objective": "Match ranges, lists and text patterns.",
+          "concepts": ["BETWEEN", "IN", "LIKE"],
+          "exercise": {
+            "prompt": "Find products whose price is between 5 and 50 (inclusive). Return name and price, cheapest first.",
+            "starter_sql": "SELECT name, price FROM products\nWHERE price BETWEEN\nORDER BY ;",
+            "solution_sql": "SELECT name, price FROM products WHERE price BETWEEN 5 AND 50 ORDER BY price;",
+            "order_matters": true
+          }
+        },
+        {
+          "id": "l7",
+          "title": "Filtering on numbers",
+          "objective": "Use a numeric condition to find specific rows.",
+          "concepts": ["WHERE", "="],
+          "exercise": {
+            "prompt": "Find the products that are out of stock (stock equal to 0). Return the name only.",
+            "starter_sql": "SELECT name FROM products\nWHERE ;",
+            "solution_sql": "SELECT name FROM products WHERE stock = 0;",
+            "order_matters": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "title": "Sorting & Shaping",
+      "summary": "Order results and compute new columns.",
+      "lessons": [
+        {
+          "id": "l8",
+          "title": "ORDER BY",
+          "objective": "Sort results ascending or descending.",
+          "concepts": ["ORDER BY", "DESC"],
+          "exercise": {
+            "prompt": "List all products from most to least expensive. Return name and price.",
+            "starter_sql": "SELECT name, price FROM products\nORDER BY ;",
+            "solution_sql": "SELECT name, price FROM products ORDER BY price DESC;",
+            "order_matters": true
+          }
+        },
+        {
+          "id": "l9",
+          "title": "Column aliases & expressions",
+          "objective": "Compute a value and give it a readable name.",
+          "concepts": ["AS", "arithmetic"],
+          "exercise": {
+            "prompt": "For each product, show its name and its total inventory value (price multiplied by stock) as a column named inventory_value.",
+            "starter_sql": "SELECT name, price * stock AS\nFROM products;",
+            "solution_sql": "SELECT name, price * stock AS inventory_value FROM products;",
+            "order_matters": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "title": "Aggregation",
+      "summary": "Summarise many rows into totals and averages.",
+      "lessons": [
+        {
+          "id": "l10",
+          "title": "COUNT",
+          "objective": "Count rows in a table.",
+          "concepts": ["COUNT", "AS"],
+          "exercise": {
+            "prompt": "How many customers are there in total? Return a single value in a column named total_customers.",
+            "starter_sql": "SELECT COUNT( ) AS total_customers FROM customers;",
+            "solution_sql": "SELECT COUNT(*) AS total_customers FROM customers;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l11",
+          "title": "GROUP BY",
+          "objective": "Aggregate within groups.",
+          "concepts": ["GROUP BY", "COUNT"],
+          "exercise": {
+            "prompt": "Count how many products are in each category. Return category and a column named product_count.",
+            "starter_sql": "SELECT category, COUNT(*) AS product_count\nFROM products\nGROUP BY ;",
+            "solution_sql": "SELECT category, COUNT(*) AS product_count FROM products GROUP BY category;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l12",
+          "title": "SUM and AVG",
+          "objective": "Compute totals and averages per group.",
+          "concepts": ["AVG", "GROUP BY"],
+          "exercise": {
+            "prompt": "What is the average product price per category? Return category and a column named avg_price.",
+            "starter_sql": "SELECT category, AVG(price) AS avg_price\nFROM products\nGROUP BY ;",
+            "solution_sql": "SELECT category, AVG(price) AS avg_price FROM products GROUP BY category;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l13",
+          "title": "HAVING",
+          "objective": "Filter groups after aggregation.",
+          "concepts": ["HAVING", "GROUP BY"],
+          "exercise": {
+            "prompt": "Which categories contain more than 2 products? Return category and a column named product_count.",
+            "starter_sql": "SELECT category, COUNT(*) AS product_count\nFROM products\nGROUP BY category\nHAVING ;",
+            "solution_sql": "SELECT category, COUNT(*) AS product_count FROM products GROUP BY category HAVING COUNT(*) > 2;",
+            "order_matters": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "m5",
+      "title": "Joins",
+      "summary": "Combine rows from more than one table.",
+      "lessons": [
+        {
+          "id": "l14",
+          "title": "INNER JOIN",
+          "objective": "Match rows across two related tables.",
+          "concepts": ["INNER JOIN", "ON"],
+          "exercise": {
+            "prompt": "List every order id together with the name of the customer who placed it. Return order id and customer name.",
+            "starter_sql": "SELECT orders.id, customers.name\nFROM orders\nINNER JOIN customers ON ;",
+            "solution_sql": "SELECT orders.id, customers.name FROM orders INNER JOIN customers ON orders.customer_id = customers.id;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l15",
+          "title": "LEFT JOIN",
+          "objective": "Keep every row from the left table, even without a match.",
+          "concepts": ["LEFT JOIN", "COUNT", "GROUP BY"],
+          "exercise": {
+            "prompt": "Show every customer's name and their number of orders (0 if they never ordered) in a column named order_count.",
+            "starter_sql": "SELECT c.name, COUNT(o.id) AS order_count\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nGROUP BY ;",
+            "solution_sql": "SELECT c.name, COUNT(o.id) AS order_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name;",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l16",
+          "title": "Joining three tables",
+          "objective": "Chain joins across several tables.",
+          "concepts": ["JOIN", "arithmetic"],
+          "exercise": {
+            "prompt": "For each order item, show the order id, the product name, and the line total (quantity multiplied by unit_price) as a column named line_total.",
+            "starter_sql": "SELECT oi.order_id, p.name AS product_name, oi.quantity * oi.unit_price AS line_total\nFROM order_items oi\nJOIN products p ON ;",
+            "solution_sql": "SELECT oi.order_id, p.name AS product_name, oi.quantity * oi.unit_price AS line_total FROM order_items oi JOIN products p ON p.id = oi.product_id;",
+            "order_matters": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "m6",
+      "title": "Subqueries",
+      "summary": "Use the result of one query inside another.",
+      "lessons": [
+        {
+          "id": "l17",
+          "title": "Subquery in WHERE",
+          "objective": "Compare each row against an aggregate.",
+          "concepts": ["subquery", "AVG"],
+          "exercise": {
+            "prompt": "Find products that are more expensive than the average product price. Return name and price.",
+            "starter_sql": "SELECT name, price FROM products\nWHERE price > (SELECT  FROM products);",
+            "solution_sql": "SELECT name, price FROM products WHERE price > (SELECT AVG(price) FROM products);",
+            "order_matters": false
+          }
+        },
+        {
+          "id": "l18",
+          "title": "Ranking with a subquery",
+          "objective": "Combine grouping, ordering and limiting to find a top result.",
+          "concepts": ["GROUP BY", "ORDER BY", "LIMIT"],
+          "exercise": {
+            "prompt": "Find the customer who has placed the most orders. Return the customer's name and a column named order_count.",
+            "starter_sql": "SELECT c.name, COUNT(o.id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nGROUP BY c.id, c.name\nORDER BY order_count DESC\nLIMIT ;",
+            "solution_sql": "SELECT c.name, COUNT(o.id) AS order_count FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name ORDER BY order_count DESC LIMIT 1;",
+            "order_matters": true
+          }
+        }
+      ]
+    }
+  ]
+}
