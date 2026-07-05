@@ -1,8 +1,10 @@
 """FastAPI application: serves the IDE frontend and the JSON API."""
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from . import llm
@@ -12,6 +14,13 @@ from .executor import get_executor
 from .grading import compare_results
 
 app = FastAPI(title="SQL Learning IDE", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ---- request models -------------------------------------------------------
@@ -112,5 +121,12 @@ def check_sql(req: CheckRequest) -> dict:
     }
 
 
-# ---- static frontend (mounted last so /api/* wins) ------------------------
-app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+# ---- static frontend --------------------------------------------------
+# On Vercel the frontend/ folder is served directly as static output (see
+# vercel.json), so the API function doesn't need to mount it. Locally
+# (python run.py) we still mount it here so `python run.py` serves everything
+# from one process.
+if os.getenv("VERCEL") is None:
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
