@@ -94,15 +94,24 @@ def generate_lesson(lesson: dict[str, Any], dataset: dict[str, Any]) -> dict[str
         return _lesson_cache[cache_key]
 
     exercise = lesson.get("exercise", {})
+    language = lesson.get("language", "sql")
+    is_python = language == "python"
+
     system = (
-        "You are an expert SQL instructor writing a short, practical MySQL "
-        "micro-lesson for a hands-on learning IDE. The student practises on a "
-        "fixed sample database immediately after reading. Teach ONLY the target "
-        "concept, concisely and encouragingly. Respond with ONLY a JSON object "
-        "and nothing else — no markdown fences, no commentary, no <think>."
+        f"You are an expert {'Python' if is_python else 'MySQL'} instructor writing a "
+        "short, practical micro-lesson for a hands-on learning IDE. The student "
+        "practises immediately after reading. Teach ONLY the target concept, "
+        "concisely and encouragingly. Respond with ONLY a JSON object and nothing "
+        "else — no markdown fences, no commentary, no <think>."
     )
-    user = f"""Dataset ({dataset.get('dialect', 'MySQL')}) tables:
-{_schema_text(dataset)}
+
+    context = (
+        "This is a standalone Python exercise (no database)."
+        if is_python
+        else f"Dataset ({dataset.get('dialect', 'MySQL')}) tables:\n{_schema_text(dataset)}"
+    )
+
+    user = f"""{context}
 
 Lesson title: {lesson['title']}
 Learning objective: {lesson.get('objective', '')}
@@ -112,11 +121,11 @@ Upcoming practice task (do NOT give away its answer): {exercise.get('prompt', ''
 Return JSON with exactly these fields:
 {{
   "summary": "one or two sentences introducing the concept",
-  "explanation_md": "2-4 short paragraphs in markdown teaching the concept; use `inline code` for SQL keywords",
-  "syntax": "the general SQL syntax pattern for this concept (one short code snippet)",
-  "example": {{"sql": "a runnable example query on THIS dataset that is NOT the practice answer", "explains": "one sentence describing the result"}},
+  "explanation_md": "2-4 short paragraphs in markdown teaching the concept; use `inline code` for keywords",
+  "syntax": "the general syntax pattern for this concept (one short code snippet)",
+  "example": {{"sql": "a runnable {'Python' if is_python else 'SQL'} example that is NOT the practice answer", "explains": "one sentence describing the result"}},
   "key_points": ["3 to 4 concise takeaways"],
-  "hint": "a gentle hint for the practice task that does not reveal the full query"
+  "hint": "a gentle hint for the practice task that does not reveal the full solution"
 }}"""
 
     raw = _chat(
@@ -164,23 +173,45 @@ def check_answer(
     is_correct: bool,
     student_result: dict[str, Any],
     expected_result: dict[str, Any],
+    language: str = "sql",
 ) -> dict[str, Any]:
     error = student_result.get("error")
+    is_python = language == "python"
 
     system = (
-        "You are a supportive MySQL tutor reviewing a student's answer inside a "
-        "learning IDE. Whether the answer is correct has ALREADY been decided by "
-        "comparing result sets — trust the provided 'is_correct' flag; do not "
-        "contradict it. Keep feedback brief, specific and encouraging. Respond "
-        "with ONLY a JSON object — no markdown fences, no <think>."
+        f"You are a supportive {'Python' if is_python else 'MySQL'} tutor reviewing a "
+        "student's answer inside a learning IDE. Whether the answer is correct has "
+        "ALREADY been decided by comparing outputs — trust the provided 'is_correct' "
+        "flag; do not contradict it. Keep feedback brief, specific and encouraging. "
+        "Respond with ONLY a JSON object — no markdown fences, no <think>."
     )
 
-    def preview(res: dict[str, Any], limit: int = 5) -> str:
-        cols = res.get("columns", [])
-        rows = res.get("rows", [])[:limit]
-        return json.dumps({"columns": cols, "rows": rows}, ensure_ascii=False)
+    if is_python:
+        user = f"""Task: {prompt}
 
-    user = f"""Task: {prompt}
+Student's Python code:
+{student_sql}
+
+Execution error (empty if none): {error or 'none'}
+is_correct: {str(is_correct).lower()}
+
+Student's stdout: {student_result.get('stdout', '')!r}
+Reference stdout: {expected_result.get('stdout', '')!r}
+
+Return JSON with exactly these fields:
+{{
+  "verdict": "correct" | "incorrect" | "error",
+  "feedback_md": "2-4 sentences in markdown. If correct: praise plus one insight or best-practice tip. If incorrect: what is wrong and why. If there is an error: explain it simply.",
+  "suggestions": ["1-3 short, actionable tips"],
+  "corrected_sql": "correct Python code when incorrect or errored; empty string when correct"
+}}"""
+    else:
+        def preview(res: dict[str, Any], limit: int = 5) -> str:
+            cols = res.get("columns", [])
+            rows = res.get("rows", [])[:limit]
+            return json.dumps({"columns": cols, "rows": rows}, ensure_ascii=False)
+
+        user = f"""Task: {prompt}
 
 Student's SQL:
 {student_sql}
@@ -216,21 +247,21 @@ Return JSON with exactly these fields:
 def _fallback_check(is_correct: bool, error: Optional[str]) -> dict[str, Any]:
     if error:
         return {
-            "feedback_md": f"Your query didn't run:\n\n```\n{error}\n```\n\nFix the syntax and try again.",
-            "suggestions": ["Check table and column names.", "Watch for missing commas or quotes."],
+            "feedback_md": f"Your code didn't run cleanly:\n\n```\n{error}\n```\n\nFix the issue and try again.",
+            "suggestions": ["Check names and syntax.", "Read the error message carefully — it names the failing line."],
             "corrected_sql": "",
         }
     if is_correct:
         return {
-            "feedback_md": "✅ Correct — your result matches the expected output. Nicely done!",
+            "feedback_md": "✅ Correct — your output matches the expected result. Nicely done!",
             "suggestions": ["Try rewriting it a different way to compare approaches."],
             "corrected_sql": "",
         }
     return {
-        "feedback_md": "Your query ran but the result doesn't match what the task asked for.",
+        "feedback_md": "Your code ran but the output doesn't match what the task asked for.",
         "suggestions": [
-            "Re-read the task and check which columns and rows are expected.",
-            "Compare your result grid against the requirement.",
+            "Re-read the task and check the expected output format.",
+            "Compare your printed output against the requirement line by line.",
         ],
         "corrected_sql": "",
     }
