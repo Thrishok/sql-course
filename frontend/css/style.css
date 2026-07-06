@@ -163,8 +163,7 @@ pre.code {
 .btn-ghost { background: transparent; color: var(--muted); }
 
 .editor-wrap { flex: 1 1 45%; min-height: 120px; overflow: hidden; border-bottom: 1px solid var(--border); }
-.CodeMirror { height: 100% !important; font-family: var(--mono) !important; font-size: 13.5px; }
-.cm-s-material-darker.CodeMirror { background: #0b0d13; }
+.editor-wrap #editor { width: 100%; height: 100%; }
 
 /* ---------- output ---------- */
 .output { flex: 1 1 55%; display: flex; flex-direction: column; min-height: 150px; background: var(--panel); }

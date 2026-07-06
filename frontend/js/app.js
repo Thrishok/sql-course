@@ -6,26 +6,32 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "
 let editor, current = null, curriculum = null;
 const done = JSON.parse(localStorage.getItem("sql_done") || "{}");
 
-/* ---- editor ---- */
+/* ---- editor (Monaco) ---- */
 function initEditor() {
-  editor = CodeMirror.fromTextArea($("#editor"), {
-    mode: "text/x-mysql",
-    theme: "material-darker",
-    lineNumbers: true,
-    matchBrackets: true,
-    smartIndent: true,
-    extraKeys: {
-      "Ctrl-Enter": runQuery,
-      "Cmd-Enter": runQuery,
-      "Ctrl-Space": "autocomplete",
-      "Shift-Ctrl-Enter": checkAnswer,
-    },
+  return new Promise((resolve) => {
+    require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs" } });
+    require(["vs/editor/editor.main"], () => {
+      editor = monaco.editor.create($("#editor"), {
+        value: "",
+        language: "sql",
+        theme: "vs-dark",
+        automaticLayout: true,
+        minimap: { enabled: false },
+        fontSize: 13.5,
+        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+        scrollBeyondLastLine: false,
+        wordWrap: "on",
+      });
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, runQuery);
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, checkAnswer);
+      resolve();
+    });
   });
 }
 
 /* ---- boot ---- */
 async function boot() {
-  initEditor();
+  await initEditor();
   const health = await api("/api/health").catch(() => ({}));
   $("#engine-badge").textContent = "engine: " + (health.db_backend || "?");
   const mb = $("#model-badge");
