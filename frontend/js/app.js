@@ -4,23 +4,39 @@ const api = (p, opts) => fetch(p, opts).then((r) => r.json());
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
 let editor, current = null, curriculum = null;
+let currentLang = "sql";
 const done = JSON.parse(localStorage.getItem("sql_done") || "{}");
+const ACE_MODES = { sql: "ace/mode/sql", python: "ace/mode/python" };
 
-/* ---- editor ---- */
+/* ---- editor (Ace) ---- */
 function initEditor() {
-  editor = CodeMirror.fromTextArea($("#editor"), {
-    mode: "text/x-mysql",
-    theme: "material-darker",
-    lineNumbers: true,
-    matchBrackets: true,
-    smartIndent: true,
-    extraKeys: {
-      "Ctrl-Enter": runQuery,
-      "Cmd-Enter": runQuery,
-      "Ctrl-Space": "autocomplete",
-      "Shift-Ctrl-Enter": checkAnswer,
-    },
+  editor = ace.edit("editor", {
+    mode: ACE_MODES[currentLang],
+    theme: "ace/theme/tomorrow_night",
+    fontSize: 13.5,
+    fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+    showPrintMargin: false,
+    enableBasicAutocompletion: true,
+    enableLiveAutocompletion: true,
+    tabSize: 2,
+    useSoftTabs: true,
   });
+  editor.commands.addCommand({
+    name: "run",
+    bindKey: { win: "Ctrl-Enter", mac: "Cmd-Enter" },
+    exec: runQuery,
+  });
+  editor.commands.addCommand({
+    name: "check",
+    bindKey: { win: "Ctrl-Shift-Enter", mac: "Cmd-Shift-Enter" },
+    exec: checkAnswer,
+  });
+  // getValue()/setValue() match Ace's native API, same as the rest of this file expects.
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  editor.session.setMode(ACE_MODES[lang] || ACE_MODES.sql);
 }
 
 /* ---- boot ---- */
@@ -41,7 +57,8 @@ async function boot() {
   $("#btn-run").onclick = runQuery;
   $("#btn-explain").onclick = explainQuery;
   $("#btn-check").onclick = checkAnswer;
-  $("#btn-reset").onclick = () => current && editor.setValue(current.lesson.exercise.starter_sql || "");
+  $("#btn-reset").onclick = () => current && editor.setValue(current.lesson.exercise.starter_sql || "", -1);
+  $("#lang-select").onchange = (e) => setLang(e.target.value);
   document.querySelectorAll(".tab").forEach((t) => (t.onclick = () => switchTab(t.dataset.tab)));
 }
 
@@ -76,7 +93,7 @@ async function loadLesson(id) {
   $("#lesson-scroll").innerHTML = `<div class="pad muted"><span class="spin"></span> Loading lesson…</div>`;
   const data = await api("/api/lessons/" + id);
   current = data;
-  editor.setValue(data.lesson.exercise.starter_sql || "");
+  editor.setValue(data.lesson.exercise.starter_sql || "", -1);
   $("#task-prompt").textContent = data.lesson.exercise.prompt;
   renderLesson(data);
   ["results", "explain", "feedback"].forEach((t) => {
@@ -107,7 +124,7 @@ function renderLesson(data) {
   html += renderSchema();
   $("#lesson-scroll").innerHTML = html;
 
-  $("#lesson-scroll").querySelectorAll(".example-run").forEach((b) => (b.onclick = () => { editor.setValue(b.dataset.sql); runQuery(); }));
+  $("#lesson-scroll").querySelectorAll(".example-run").forEach((b) => (b.onclick = () => { editor.setValue(b.dataset.sql, -1); runQuery(); }));
   $("#regen").onclick = async (e) => {
     e.target.innerHTML = `<span class="spin"></span> Generating…`;
     const r = await api("/api/lessons/" + l.id + "/generate", { method: "POST" });
@@ -173,7 +190,7 @@ async function checkAnswer() {
   if (f.suggestions?.length) h += `<ul class="sugg">${f.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`;
   if (f.corrected_sql) h += `<div class="corrected"><div class="card-label">Suggested query</div><pre class="code">${esc(f.corrected_sql)}</pre><button class="insert-fix" data-sql="${esc(f.corrected_sql)}">↳ Load into editor</button></div>`;
   $("#panel-feedback").innerHTML = h;
-  $("#panel-feedback").querySelector(".insert-fix")?.addEventListener("click", (e) => editor.setValue(e.target.dataset.sql));
+  $("#panel-feedback").querySelector(".insert-fix")?.addEventListener("click", (e) => editor.setValue(e.target.dataset.sql, -1));
   $("#output-meta").textContent = res.correct ? "passed ✓" : "";
 }
 

@@ -7,11 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- CodeMirror 5 (reliable, single-file, no ESM dedupe headaches) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css" />
-
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -50,6 +45,10 @@
       </div>
 
       <div class="editor-toolbar">
+        <select id="lang-select" class="btn lang-select" title="Editor language">
+          <option value="sql">SQL</option>
+          <option value="python">Python</option>
+        </select>
         <button class="btn btn-run" id="btn-run" title="Ctrl+Enter">▶ Run</button>
         <button class="btn" id="btn-explain" title="See how the engine executes it">⚙ Explain</button>
         <button class="btn btn-check" id="btn-check" title="Ctrl+Shift+Enter">✓ Check answer</button>
@@ -58,7 +57,7 @@
       </div>
 
       <div class="editor-wrap">
-        <textarea id="editor"></textarea>
+        <div id="editor"></div>
       </div>
 
       <div class="output">
@@ -78,11 +77,11 @@
   </div>
 
   <!-- libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/sql-hint.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/mode-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/mode-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/theme-tomorrow_night.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ext-language_tools.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
   <script src="js/app.js"></script>
 </body>
