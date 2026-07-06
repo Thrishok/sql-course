@@ -282,6 +282,85 @@
           }
         }
       ]
+    },
+    {
+      "id": "m7",
+      "title": "Python Foundations",
+      "summary": "Learn core Python by writing and running real code.",
+      "lessons": [
+        {
+          "id": "p1",
+          "title": "print() and variables",
+          "language": "python",
+          "objective": "Store a value in a variable and print it to the screen.",
+          "concepts": ["print", "variables", "str"],
+          "exercise": {
+            "prompt": "Create a variable named name set to 'Ada', then print exactly: Hello, Ada!",
+            "starter_sql": "name = \nprint()",
+            "solution_sql": "name = 'Ada'\nprint(f'Hello, {name}!')"
+          }
+        },
+        {
+          "id": "p2",
+          "title": "if / else",
+          "language": "python",
+          "objective": "Branch program logic based on a condition.",
+          "concepts": ["if", "else", "comparison"],
+          "exercise": {
+            "prompt": "Set age = 20. If age is 18 or older print 'adult', otherwise print 'minor'.",
+            "starter_sql": "age = 20\nif :\n    print()\nelse:\n    print()",
+            "solution_sql": "age = 20\nif age >= 18:\n    print('adult')\nelse:\n    print('minor')"
+          }
+        },
+        {
+          "id": "p3",
+          "title": "for loops",
+          "language": "python",
+          "objective": "Repeat an action for every item in a collection.",
+          "concepts": ["for", "range", "loops"],
+          "exercise": {
+            "prompt": "Print the numbers 1 to 5, one per line, using a for loop and range().",
+            "starter_sql": "for i in range():\n    print(i)",
+            "solution_sql": "for i in range(1, 6):\n    print(i)"
+          }
+        },
+        {
+          "id": "p4",
+          "title": "Lists",
+          "language": "python",
+          "objective": "Store, iterate and transform a collection of values.",
+          "concepts": ["list", "for", "append"],
+          "exercise": {
+            "prompt": "Given fruits = ['apple', 'banana', 'cherry'], print each fruit in uppercase, one per line.",
+            "starter_sql": "fruits = ['apple', 'banana', 'cherry']\nfor fruit in fruits:\n    print()",
+            "solution_sql": "fruits = ['apple', 'banana', 'cherry']\nfor fruit in fruits:\n    print(fruit.upper())"
+          }
+        },
+        {
+          "id": "p5",
+          "title": "Functions",
+          "language": "python",
+          "objective": "Package reusable logic into a function.",
+          "concepts": ["def", "return", "function call"],
+          "exercise": {
+            "prompt": "Write a function square(n) that returns n squared, then print square(6).",
+            "starter_sql": "def square(n):\n    return\n\nprint()",
+            "solution_sql": "def square(n):\n    return n * n\n\nprint(square(6))"
+          }
+        },
+        {
+          "id": "p6",
+          "title": "Dictionaries",
+          "language": "python",
+          "objective": "Look up values by key in a dictionary.",
+          "concepts": ["dict", "keys", "values"],
+          "exercise": {
+            "prompt": "Given ages = {'Sam': 21, 'Lee': 34, 'Kai': 28}, print each name and age like 'Sam is 21', one per line, in the dict's insertion order.",
+            "starter_sql": "ages = {'Sam': 21, 'Lee': 34, 'Kai': 28}\nfor name, age in ages.items():\n    print()",
+            "solution_sql": "ages = {'Sam': 21, 'Lee': 34, 'Kai': 28}\nfor name, age in ages.items():\n    print(f'{name} is {age}')"
+          }
+        }
+      ]
     }
   ]
 }

@@ -50,6 +50,10 @@
       </div>
 
       <div class="editor-toolbar">
+        <select id="lang-select" class="btn lang-select" title="Editor language" disabled>
+          <option value="sql">SQL</option>
+          <option value="python">Python</option>
+        </select>
         <button class="btn btn-run" id="btn-run" title="Ctrl+Enter">▶ Run</button>
         <button class="btn" id="btn-explain" title="See how the engine executes it">⚙ Explain</button>
         <button class="btn btn-check" id="btn-check" title="Ctrl+Shift+Enter">✓ Check answer</button>
@@ -80,6 +84,7 @@
   <!-- libs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/sql-hint.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>

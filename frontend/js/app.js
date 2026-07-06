@@ -4,12 +4,14 @@ const api = (p, opts) => fetch(p, opts).then((r) => r.json());
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
 let editor, current = null, curriculum = null;
+let currentLang = "sql";
 const done = JSON.parse(localStorage.getItem("sql_done") || "{}");
+const CM_MODES = { sql: "text/x-mysql", python: "text/x-python" };
 
 /* ---- editor ---- */
 function initEditor() {
   editor = CodeMirror.fromTextArea($("#editor"), {
-    mode: "text/x-mysql",
+    mode: CM_MODES[currentLang],
     theme: "material-darker",
     lineNumbers: true,
     matchBrackets: true,
@@ -21,6 +23,11 @@ function initEditor() {
       "Shift-Ctrl-Enter": checkAnswer,
     },
   });
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  editor.setOption("mode", CM_MODES[lang] || CM_MODES.sql);
 }
 
 /* ---- boot ---- */
@@ -43,6 +50,7 @@ async function boot() {
   $("#btn-check").onclick = checkAnswer;
   $("#btn-reset").onclick = () => current && editor.setValue(current.lesson.exercise.starter_sql || "");
   document.querySelectorAll(".tab").forEach((t) => (t.onclick = () => switchTab(t.dataset.tab)));
+  // language dropdown reflects the active lesson; not user-editable directly
 }
 
 /* ---- sidebar tree ---- */
@@ -60,7 +68,8 @@ function buildTree() {
       const el = document.createElement("div");
       el.className = "lesson-item" + (done[l.id] ? " done" : "");
       el.dataset.id = l.id;
-      el.innerHTML = `<span class="tick">✓</span><span class="lnum">${String(n).padStart(2, "0")}</span><span>${esc(l.title)}</span>`;
+      const langTag = l.language === "python" ? `<span class="lang-tag py">PY</span>` : "";
+      el.innerHTML = `<span class="tick">✓</span><span class="lnum">${String(n).padStart(2, "0")}</span><span>${esc(l.title)}</span>${langTag}`;
       el.onclick = () => loadLesson(l.id);
       tree.appendChild(el);
     });
@@ -76,11 +85,15 @@ async function loadLesson(id) {
   $("#lesson-scroll").innerHTML = `<div class="pad muted"><span class="spin"></span> Loading lesson…</div>`;
   const data = await api("/api/lessons/" + id);
   current = data;
+  const lang = data.lesson.language || "sql";
+  setLang(lang);
+  $("#lang-select").value = lang;
+  $("#btn-explain").style.display = lang === "python" ? "none" : "";
   editor.setValue(data.lesson.exercise.starter_sql || "");
   $("#task-prompt").textContent = data.lesson.exercise.prompt;
   renderLesson(data);
   ["results", "explain", "feedback"].forEach((t) => {
-    $("#panel-" + t).innerHTML = `<div class="muted pad">${t === "results" ? "Run a query to see results." : t === "explain" ? "Press <b>Explain</b> to see the query plan." : "Press <b>Check answer</b> for Qwen's feedback."}</div>`;
+    $("#panel-" + t).innerHTML = `<div class="muted pad">${t === "results" ? "Run your code to see output." : t === "explain" ? "Press <b>Explain</b> to see the query plan." : "Press <b>Check answer</b> for Qwen's feedback."}</div>`;
   });
   $("#output-meta").textContent = "";
   switchTab("results");
@@ -104,7 +117,7 @@ function renderLesson(data) {
   if (c.hint) html += `<div class="hint-box"><div class="card-label">Hint</div>${esc(c.hint)}</div>`;
 
   html += `<button class="regen-btn" id="regen">↻ Regenerate with Qwen</button>`;
-  html += renderSchema();
+  if (l.language !== "python") html += renderSchema();
   $("#lesson-scroll").innerHTML = html;
 
   $("#lesson-scroll").querySelectorAll(".example-run").forEach((b) => (b.onclick = () => { editor.setValue(b.dataset.sql); runQuery(); }));
@@ -141,18 +154,32 @@ function renderGrid(res) {
   return h + `</tbody></table>`;
 }
 
+function renderPyOutput(res) {
+  let h = "";
+  if (res.stdout) h += `<pre class="code" style="margin:14px">${esc(res.stdout)}</pre>`;
+  if (res.error) h += `<div class="msg-error">${esc(res.stderr || res.error)}</div>`;
+  else if (!res.stdout) h += `<div class="msg-ok">Ran with no output. Add a print() to see results.</div>`;
+  return h;
+}
+
 async function runQuery() {
   switchTab("results");
   $("#panel-results").innerHTML = `<div class="pad muted"><span class="spin"></span> Running…</div>`;
-  const res = await api("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sql: editor.getValue() }) });
-  $("#panel-results").innerHTML = renderGrid(res);
-  $("#output-meta").textContent = res.error ? "error" : `${res.row_count} row${res.row_count === 1 ? "" : "s"} · ${res.elapsed_ms} ms${res.truncated ? " · truncated" : ""}`;
+  const res = await api("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sql: editor.getValue(), language: currentLang }) });
+  if (currentLang === "python") {
+    $("#panel-results").innerHTML = renderPyOutput(res);
+    $("#output-meta").textContent = res.error ? "error" : `${res.elapsed_ms} ms${res.truncated ? " · truncated" : ""}`;
+  } else {
+    $("#panel-results").innerHTML = renderGrid(res);
+    $("#output-meta").textContent = res.error ? "error" : `${res.row_count} row${res.row_count === 1 ? "" : "s"} · ${res.elapsed_ms} ms${res.truncated ? " · truncated" : ""}`;
+  }
 }
 
 async function explainQuery() {
+  if (currentLang === "python") return;
   switchTab("explain");
   $("#panel-explain").innerHTML = `<div class="pad muted"><span class="spin"></span> Analysing…</div>`;
-  const res = await api("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sql: editor.getValue(), explain: true }) });
+  const res = await api("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sql: editor.getValue(), explain: true, language: currentLang }) });
   $("#panel-explain").innerHTML = `<div class="pad muted" style="padding-bottom:0">How the engine will execute this query:</div>` + renderGrid(res);
 }
 
@@ -161,7 +188,7 @@ async function checkAnswer() {
   if (!current) return;
   switchTab("feedback");
   $("#panel-feedback").innerHTML = `<div class="pad muted"><span class="spin"></span> Checking with Qwen…</div>`;
-  const res = await api("/api/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lesson_id: current.lesson.id, sql: editor.getValue() }) });
+  const res = await api("/api/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lesson_id: current.lesson.id, sql: editor.getValue(), language: currentLang }) });
   const f = res.feedback;
   const label = { correct: "Correct", incorrect: "Not quite", error: "Query error" }[f.verdict] || "Reviewed";
 

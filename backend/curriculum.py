@@ -35,7 +35,11 @@ def curriculum_outline() -> dict[str, Any]:
                 "title": module["title"],
                 "summary": module.get("summary", ""),
                 "lessons": [
-                    {"id": lesson["id"], "title": lesson["title"]}
+                    {
+                        "id": lesson["id"],
+                        "title": lesson["title"],
+                        "language": lesson.get("language", "sql"),
+                    }
                     for lesson in module["lessons"]
                 ],
             }

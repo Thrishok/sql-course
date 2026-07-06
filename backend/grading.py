@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import Counter
 
 from .executor import RunResult
+from .python_executor import PyRunResult
 
 
 def compare_results(student: RunResult, expected: RunResult, order_matters: bool) -> bool:
@@ -27,3 +28,10 @@ def compare_results(student: RunResult, expected: RunResult, order_matters: bool
         return student_rows == expected_rows
     # Order-insensitive: same rows, same multiplicities, any order.
     return Counter(student_rows) == Counter(expected_rows)
+
+
+def compare_python_output(student: PyRunResult, expected: PyRunResult) -> bool:
+    """True when the student's printed stdout matches the reference solution's."""
+    if student.error or expected.error:
+        return False
+    return student.stdout.strip() == expected.stdout.strip()
