@@ -20,7 +20,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-TIMEOUT_SECONDS = 40  # Spark cold start is slow; generous budget for a demo.
+TIMEOUT_SECONDS = 90  # Free-tier hosts (e.g. Render) are CPU/memory-throttled;
+                       # a JVM + Spark cold start there can take much longer
+                       # than on a normal machine.
 MAX_OUTPUT_CHARS = 20_000
 
 _BOOTSTRAP = """
@@ -37,8 +39,11 @@ spark = (
     .appName("sql-course-demo")
     .master("local[1]")
     .config("spark.ui.enabled", "false")
-    .config("spark.driver.memory", "512m")
-    .config("spark.sql.shuffle.partitions", "2")
+    .config("spark.driver.memory", "256m")
+    .config("spark.executor.memory", "256m")
+    .config("spark.sql.shuffle.partitions", "1")
+    .config("spark.sql.adaptive.enabled", "false")
+    .config("spark.driver.host", "127.0.0.1")
     .getOrCreate()
 )
 spark.sparkContext.setLogLevel("ERROR")
