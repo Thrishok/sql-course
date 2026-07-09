@@ -83,6 +83,9 @@ def _schema_text(dataset: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+LANG_NAME = {"sql": "MySQL", "python": "Python", "pyspark": "PySpark"}
+
+
 # ---------------------------------------------------------------------------
 #  Requirement #1 — generate SQL lesson / learning content
 # ---------------------------------------------------------------------------
@@ -95,21 +98,26 @@ def generate_lesson(lesson: dict[str, Any], dataset: dict[str, Any]) -> dict[str
 
     exercise = lesson.get("exercise", {})
     language = lesson.get("language", "sql")
-    is_python = language == "python"
+    lang_name = LANG_NAME.get(language, "MySQL")
 
     system = (
-        f"You are an expert {'Python' if is_python else 'MySQL'} instructor writing a "
+        f"You are an expert {lang_name} instructor writing a "
         "short, practical micro-lesson for a hands-on learning IDE. The student "
         "practises immediately after reading. Teach ONLY the target concept, "
         "concisely and encouragingly. Respond with ONLY a JSON object and nothing "
         "else — no markdown fences, no commentary, no <think>."
     )
 
-    context = (
-        "This is a standalone Python exercise (no database)."
-        if is_python
-        else f"Dataset ({dataset.get('dialect', 'MySQL')}) tables:\n{_schema_text(dataset)}"
-    )
+    if language == "python":
+        context = "This is a standalone Python exercise (no database)."
+    elif language == "pyspark":
+        context = (
+            "This is a PySpark exercise. A SparkSession is already created and "
+            "available as the variable `spark` — do not create a new one. Data is "
+            "built inline in the snippet (small in-memory DataFrames), no external files."
+        )
+    else:
+        context = f"Dataset ({dataset.get('dialect', 'MySQL')}) tables:\n{_schema_text(dataset)}"
 
     user = f"""{context}
 
@@ -123,7 +131,7 @@ Return JSON with exactly these fields:
   "summary": "one or two sentences introducing the concept",
   "explanation_md": "2-4 short paragraphs in markdown teaching the concept; use `inline code` for keywords",
   "syntax": "the general syntax pattern for this concept (one short code snippet)",
-  "example": {{"sql": "a runnable {'Python' if is_python else 'SQL'} example that is NOT the practice answer", "explains": "one sentence describing the result"}},
+  "example": {{"sql": "a runnable {lang_name} example that is NOT the practice answer", "explains": "one sentence describing the result"}},
   "key_points": ["3 to 4 concise takeaways"],
   "hint": "a gentle hint for the practice task that does not reveal the full solution"
 }}"""
@@ -176,20 +184,21 @@ def check_answer(
     language: str = "sql",
 ) -> dict[str, Any]:
     error = student_result.get("error")
-    is_python = language == "python"
+    lang_name = LANG_NAME.get(language, "MySQL")
+    is_stdout_based = language in ("python", "pyspark")
 
     system = (
-        f"You are a supportive {'Python' if is_python else 'MySQL'} tutor reviewing a "
+        f"You are a supportive {lang_name} tutor reviewing a "
         "student's answer inside a learning IDE. Whether the answer is correct has "
         "ALREADY been decided by comparing outputs — trust the provided 'is_correct' "
         "flag; do not contradict it. Keep feedback brief, specific and encouraging. "
         "Respond with ONLY a JSON object — no markdown fences, no <think>."
     )
 
-    if is_python:
+    if is_stdout_based:
         user = f"""Task: {prompt}
 
-Student's Python code:
+Student's {lang_name} code:
 {student_sql}
 
 Execution error (empty if none): {error or 'none'}
@@ -203,7 +212,7 @@ Return JSON with exactly these fields:
   "verdict": "correct" | "incorrect" | "error",
   "feedback_md": "2-4 sentences in markdown. If correct: praise plus one insight or best-practice tip. If incorrect: what is wrong and why. If there is an error: explain it simply.",
   "suggestions": ["1-3 short, actionable tips"],
-  "corrected_sql": "correct Python code when incorrect or errored; empty string when correct"
+  "corrected_sql": "correct {lang_name} code when incorrect or errored; empty string when correct"
 }}"""
     else:
         def preview(res: dict[str, Any], limit: int = 5) -> str:

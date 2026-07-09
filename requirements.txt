@@ -5,6 +5,10 @@ groq>=1.0.0
 python-dotenv>=1.0
 pydantic>=2.6
 
+# PySpark demo lessons. Needs a JVM (Java 11+) on PATH at runtime — see
+# render-build.sh / README for how this branch installs one on Render.
+pyspark>=3.5,<4.0
+
 # Optional: enable real MySQL execution instead of the built-in SQLite engine.
 # Install these + set DB_BACKEND=mysql and MYSQL_URL in .env
 # PyMySQL>=1.1

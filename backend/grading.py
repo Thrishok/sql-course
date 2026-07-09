@@ -31,7 +31,11 @@ def compare_results(student: RunResult, expected: RunResult, order_matters: bool
 
 
 def compare_python_output(student: PyRunResult, expected: PyRunResult) -> bool:
-    """True when the student's printed stdout matches the reference solution's."""
+    """True when the student's printed stdout matches the reference solution's.
+
+    Also used for PySpark (SparkRunResult) — both share the same
+    .error/.stdout shape, so one comparator covers both stdout-based languages.
+    """
     if student.error or expected.error:
         return False
     return student.stdout.strip() == expected.stdout.strip()

@@ -28,7 +28,8 @@ class Settings:
         self.db_backend: str = os.getenv("DB_BACKEND", "sqlite").strip().lower()
         self.mysql_url: str = os.getenv("MYSQL_URL", "").strip()
 
-        self.host: str = os.getenv("HOST", "127.0.0.1").strip()
+        # Render (and most PaaS hosts) require binding 0.0.0.0, not localhost.
+        self.host: str = os.getenv("HOST", "0.0.0.0").strip()
         self.port: int = int(os.getenv("PORT", "8000"))
 
     @property

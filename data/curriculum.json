@@ -361,6 +361,49 @@
           }
         }
       ]
+    },
+    {
+      "id": "m8",
+      "title": "PySpark Foundations",
+      "summary": "Run real distributed-style DataFrame code with Apache Spark.",
+      "lessons": [
+        {
+          "id": "s1",
+          "title": "Creating a DataFrame",
+          "language": "pyspark",
+          "objective": "Build a Spark DataFrame from in-memory rows and print its contents.",
+          "concepts": ["SparkSession", "createDataFrame", "show"],
+          "exercise": {
+            "prompt": "A SparkSession is provided as `spark`. Create a DataFrame from the rows [(1, 'Ada'), (2, 'Lin'), (3, 'Sam')] with columns 'id' and 'name', then print it with df.show().",
+            "starter_sql": "rows = [(1, 'Ada'), (2, 'Lin'), (3, 'Sam')]\ndf = spark.createDataFrame(rows, )\ndf.show()",
+            "solution_sql": "rows = [(1, 'Ada'), (2, 'Lin'), (3, 'Sam')]\ndf = spark.createDataFrame(rows, ['id', 'name'])\ndf.show()"
+          }
+        },
+        {
+          "id": "s2",
+          "title": "select() and filter()",
+          "language": "pyspark",
+          "objective": "Pick columns and keep only the rows that match a condition.",
+          "concepts": ["select", "filter", "where"],
+          "exercise": {
+            "prompt": "Using the products rows [(1,'Mouse',25.0), (2,'Keyboard',75.5), (3,'Headphones',199.0)] with columns 'id','name','price', build the DataFrame, then select name and price for products priced above 50, and print with .show().",
+            "starter_sql": "rows = [(1,'Mouse',25.0), (2,'Keyboard',75.5), (3,'Headphones',199.0)]\ndf = spark.createDataFrame(rows, ['id', 'name', 'price'])\ndf.filter(df.price > ).select('name', 'price').show()",
+            "solution_sql": "rows = [(1,'Mouse',25.0), (2,'Keyboard',75.5), (3,'Headphones',199.0)]\ndf = spark.createDataFrame(rows, ['id', 'name', 'price'])\ndf.filter(df.price > 50).select('name', 'price').show()"
+          }
+        },
+        {
+          "id": "s3",
+          "title": "groupBy() and aggregation",
+          "language": "pyspark",
+          "objective": "Aggregate rows into groups, the core of distributed analytics.",
+          "concepts": ["groupBy", "agg", "sum"],
+          "exercise": {
+            "prompt": "Using the sales rows [('A',10), ('B',5), ('A',7), ('B',3)] with columns 'category','amount', group by category and print the total amount per category as a column named total, ordered by category. Use .orderBy('category').show().",
+            "starter_sql": "rows = [('A',10), ('B',5), ('A',7), ('B',3)]\ndf = spark.createDataFrame(rows, ['category', 'amount'])\ndf.groupBy('category').agg({'amount': 'sum'}).withColumnRenamed('sum(amount)', 'total').orderBy('category').show()",
+            "solution_sql": "rows = [('A',10), ('B',5), ('A',7), ('B',3)]\ndf = spark.createDataFrame(rows, ['category', 'amount'])\ndf.groupBy('category').agg({'amount': 'sum'}).withColumnRenamed('sum(amount)', 'total').orderBy('category').show()"
+          }
+        }
+      ]
     }
   ]
 }

@@ -6,7 +6,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "
 let editor, current = null, curriculum = null;
 let currentLang = "sql";
 const done = JSON.parse(localStorage.getItem("sql_done") || "{}");
-const CM_MODES = { sql: "text/x-mysql", python: "text/x-python" };
+const CM_MODES = { sql: "text/x-mysql", python: "text/x-python", pyspark: "text/x-python" };
 
 /* ---- editor ---- */
 function initEditor() {
@@ -68,7 +68,7 @@ function buildTree() {
       const el = document.createElement("div");
       el.className = "lesson-item" + (done[l.id] ? " done" : "");
       el.dataset.id = l.id;
-      const langTag = l.language === "python" ? `<span class="lang-tag py">PY</span>` : "";
+      const langTag = l.language === "python" ? `<span class="lang-tag py">PY</span>` : l.language === "pyspark" ? `<span class="lang-tag spark">SPARK</span>` : "";
       el.innerHTML = `<span class="tick">✓</span><span class="lnum">${String(n).padStart(2, "0")}</span><span>${esc(l.title)}</span>${langTag}`;
       el.onclick = () => loadLesson(l.id);
       tree.appendChild(el);
@@ -88,7 +88,7 @@ async function loadLesson(id) {
   const lang = data.lesson.language || "sql";
   setLang(lang);
   $("#lang-select").value = lang;
-  $("#btn-explain").style.display = lang === "python" ? "none" : "";
+  $("#btn-explain").style.display = lang === "sql" ? "" : "none";
   editor.setValue(data.lesson.exercise.starter_sql || "");
   $("#task-prompt").textContent = data.lesson.exercise.prompt;
   renderLesson(data);
@@ -117,7 +117,7 @@ function renderLesson(data) {
   if (c.hint) html += `<div class="hint-box"><div class="card-label">Hint</div>${esc(c.hint)}</div>`;
 
   html += `<button class="regen-btn" id="regen">↻ Regenerate with Qwen</button>`;
-  if (l.language !== "python") html += renderSchema();
+  if (l.language === "sql") html += renderSchema();
   $("#lesson-scroll").innerHTML = html;
 
   $("#lesson-scroll").querySelectorAll(".example-run").forEach((b) => (b.onclick = () => { editor.setValue(b.dataset.sql); runQuery(); }));
@@ -156,9 +156,12 @@ function renderGrid(res) {
 
 function renderPyOutput(res) {
   let h = "";
+  if (res.pyspark_missing) {
+    h += `<div class="msg-error">PySpark isn't installed on this server yet. Install <code>pyspark</code> and a JVM (Java 11+) to run this lesson — see README.</div>`;
+  }
   if (res.stdout) h += `<pre class="code" style="margin:14px">${esc(res.stdout)}</pre>`;
-  if (res.error) h += `<div class="msg-error">${esc(res.stderr || res.error)}</div>`;
-  else if (!res.stdout) h += `<div class="msg-ok">Ran with no output. Add a print() to see results.</div>`;
+  if (res.error && !res.pyspark_missing) h += `<div class="msg-error">${esc(res.stderr || res.error)}</div>`;
+  else if (!res.stdout && !res.pyspark_missing) h += `<div class="msg-ok">Ran with no output. Add a print() to see results.</div>`;
   return h;
 }
 
@@ -166,7 +169,7 @@ async function runQuery() {
   switchTab("results");
   $("#panel-results").innerHTML = `<div class="pad muted"><span class="spin"></span> Running…</div>`;
   const res = await api("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sql: editor.getValue(), language: currentLang }) });
-  if (currentLang === "python") {
+  if (currentLang === "python" || currentLang === "pyspark") {
     $("#panel-results").innerHTML = renderPyOutput(res);
     $("#output-meta").textContent = res.error ? "error" : `${res.elapsed_ms} ms${res.truncated ? " · truncated" : ""}`;
   } else {
@@ -176,7 +179,7 @@ async function runQuery() {
 }
 
 async function explainQuery() {
-  if (currentLang === "python") return;
+  if (currentLang !== "sql") return;
   switchTab("explain");
   $("#panel-explain").innerHTML = `<div class="pad muted"><span class="spin"></span> Analysing…</div>`;
   const res = await api("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sql: editor.getValue(), explain: true, language: currentLang }) });

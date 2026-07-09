@@ -1,23 +1,33 @@
-# SQL Learning IDE
+# SQL Learning IDE (SQL + Python + PySpark)
 
-A browser-based IDE that **teaches MySQL-style SQL** and lets students practise
-in a real coding environment. Powered by **Qwen (via the Groq API)**:
+A browser-based IDE that teaches **MySQL-style SQL, Python, and PySpark**, and
+lets students practise in a real coding environment. Powered by **Qwen (via
+the Groq API)**:
 
 1. **Qwen generates the learning content** for each lesson — explanation, syntax,
    a worked example, key points, and a hint.
-2. **A built-in coding environment** runs the student's SQL against a sample
-   database, and **Qwen checks the answer** (correct / wrong) and gives suggestions.
+2. **A built-in coding environment** runs the student's code for real (SQL,
+   Python, or PySpark), and **Qwen checks the answer** (correct / wrong) and
+   gives suggestions.
+
+This branch (`PYSPARK_JUPYTERHUB`) targets deployment on **Render** (or any
+persistent host) rather than Vercel, because real PySpark needs a JVM and a
+process that can spawn subprocesses — Vercel's serverless functions can't
+reliably do either. SQL and Python still run fine on Vercel too; only the
+PySpark lessons need this branch's target.
 
 ## How the pieces fit
 
 | Layer | What it does |
 |-------|--------------|
 | `backend/executor.py` | Runs SQL on a **real SQL engine** (Python's built-in SQLite) against a *fresh, seeded, in-memory database per request* — safe and instant. Pluggable: set `DB_BACKEND=mysql` to run on a real MySQL server instead. |
-| `backend/llm.py` | Calls Qwen on Groq to generate lessons and review answers. Falls back to offline content if no API key is set. |
-| `backend/grading.py` | Decides correctness **deterministically** by comparing result sets — the model never invents the verdict, it only explains it. |
+| `backend/python_executor.py` | Runs student Python in a fresh subprocess per request — free, zero-install, isolated. |
+| `backend/pyspark_executor.py` | Runs student PySpark in a fresh subprocess with a real `SparkSession` (`local[1]` master). Needs a JVM (Java 11+) on PATH; degrades gracefully with a clear message if PySpark/Java isn't installed. |
+| `backend/llm.py` | Calls Qwen on Groq to generate lessons and review answers, language-aware (SQL/Python/PySpark). Falls back to offline content if no API key is set. |
+| `backend/grading.py` | Decides correctness **deterministically** — SQL by comparing result sets, Python/PySpark by comparing stdout — the model never invents the verdict, it only explains it. |
 | `backend/main.py` | FastAPI app + JSON API + serves the frontend. |
-| `frontend/` | The IDE: course tree, lesson pane, SQL editor (CodeMirror), results grid, an **Explain** view (query plan), and AI feedback. |
-| `data/` | `curriculum.json` (18 lessons across 6 modules) + `schema.sql` (the sample "shop" database). |
+| `frontend/` | The IDE: course tree, lesson pane, a CodeMirror editor that switches mode per lesson (SQL/Python/PySpark), results grid or stdout view, an **Explain** view (query plan, SQL only), and AI feedback. |
+| `data/` | `curriculum.json` (18 SQL + 6 Python + 3 PySpark lessons) + `schema.sql` (the sample "shop" database). |
 
 > **Why SQLite when the course teaches MySQL?** You had no MySQL server or Docker
 > installed and wanted a free, zero-setup engine that truly *interprets* SQL like an
@@ -55,6 +65,23 @@ MYSQL_URL=mysql+pymysql://user:password@127.0.0.1:3306/sqlcourse
 ```
 
 Student queries run inside a rolled-back transaction, so the data is never mutated.
+
+## Deploying to Render (for the PySpark lessons)
+
+PySpark needs a JVM, so Render's build step installs one before installing the
+Python dependencies:
+
+1. Push this branch to GitHub.
+2. Create a new **Web Service** on Render, connect the repo, branch `PYSPARK_JUPYTERHUB`.
+3. **Build Command:** `bash render-build.sh`
+4. **Start Command:** `python run.py`
+5. **Environment:** add `GROQ_API_KEY` (and optionally `GROQ_MODEL`), and set `PORT`
+   to whatever Render assigns (Render sets `$PORT` automatically; `run.py` reads it).
+
+`render-build.sh` runs `apt-get install default-jre-headless` to get Java 11+
+on the image, then `pip install -r requirements.txt` (which includes `pyspark`).
+Without Java, the PySpark lessons still load and run — they just return a
+clear "PySpark is not installed on this server" message instead of crashing.
 
 ## API
 

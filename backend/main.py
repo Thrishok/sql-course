@@ -12,6 +12,7 @@ from .config import FRONTEND_DIR, get_settings
 from .curriculum import curriculum_outline, dataset_info, find_lesson
 from .executor import get_executor
 from .grading import compare_python_output, compare_results
+from .pyspark_executor import run_pyspark
 from .python_executor import run_python
 
 app = FastAPI(title="SQL Learning IDE", version="1.0.0")
@@ -96,6 +97,8 @@ def regenerate_lesson(lesson_id: str) -> dict:
 def run_sql(req: RunRequest) -> dict:
     if req.language == "python":
         return run_python(req.sql).to_dict()
+    if req.language == "pyspark":
+        return run_pyspark(req.sql).to_dict()
     executor = get_executor()
     result = executor.explain(req.sql) if req.explain else executor.run(req.sql)
     return result.to_dict()
@@ -118,6 +121,10 @@ def check_sql(req: CheckRequest) -> dict:
     if language == "python":
         student_result = run_python(req.sql)
         expected_result = run_python(exercise["solution_sql"])
+        is_correct = compare_python_output(student_result, expected_result)
+    elif language == "pyspark":
+        student_result = run_pyspark(req.sql)
+        expected_result = run_pyspark(exercise["solution_sql"])
         is_correct = compare_python_output(student_result, expected_result)
     else:
         executor = get_executor()
