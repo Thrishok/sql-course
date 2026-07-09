@@ -68,15 +68,21 @@ Student queries run inside a rolled-back transaction, so the data is never mutat
 
 ## Deploying to Render (for the PySpark lessons)
 
-PySpark needs a JVM, so Render's build step installs one before installing the
-Python dependencies:
+PySpark needs a JVM. Render's **native** Python environment builds run as a
+non-root user against a read-only filesystem outside the app directory, so
+`apt-get install` (needed for Java) fails there — there is no way to install
+a system package in Render's native build step. This branch deploys via
+**Docker** instead, which gives full control over the base image:
 
 1. Push this branch to GitHub.
 2. Create a new **Web Service** on Render, connect the repo, branch `PYSPARK_JUPYTERHUB`.
-3. **Build Command:** `bash render-build.sh`
-4. **Start Command:** `python run.py`
-5. **Environment:** add `GROQ_API_KEY` (and optionally `GROQ_MODEL`), and set `PORT`
-   to whatever Render assigns (Render sets `$PORT` automatically; `run.py` reads it).
+3. **Runtime:** choose **Docker** (Render auto-detects the `Dockerfile` at the repo root).
+4. Leave Build/Start commands blank — the `Dockerfile`'s `CMD` handles startup.
+5. **Environment:** add `GROQ_API_KEY` (and optionally `GROQ_MODEL`). Don't set
+   `PORT`/`HOST` — Render injects `$PORT` automatically and `run.py` binds `0.0.0.0`.
+
+The `Dockerfile` installs `default-jre-headless` (Java 17) as root during the
+image build, then installs `requirements.txt` (including `pyspark`) on top.
 
 `render-build.sh` runs `apt-get install default-jre-headless` to get Java 11+
 on the image, then `pip install -r requirements.txt` (which includes `pyspark`).
