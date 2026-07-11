@@ -167,7 +167,10 @@ function renderPyOutput(res) {
 
 async function runQuery() {
   switchTab("results");
-  $("#panel-results").innerHTML = `<div class="pad muted"><span class="spin"></span> Running…</div>`;
+  const waitMsg = currentLang === "pyspark"
+    ? "Starting Spark… a cold JVM start can take 20–40s the first time, thanks for your patience."
+    : "Running…";
+  $("#panel-results").innerHTML = `<div class="pad muted"><span class="spin"></span> ${waitMsg}</div>`;
   const res = await api("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sql: editor.getValue(), language: currentLang }) });
   if (currentLang === "python" || currentLang === "pyspark") {
     $("#panel-results").innerHTML = renderPyOutput(res);

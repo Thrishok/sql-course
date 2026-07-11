@@ -27,7 +27,21 @@ MAX_OUTPUT_CHARS = 20_000
 
 _BOOTSTRAP = """
 import sys, os
+
+# Trim JVM startup work as much as possible: no JIT warmup tiering, no
+# compressed-oops class-data sharing probe, serial GC (cheaper to init than
+# the default G1 for a JVM that lives a few seconds), no ivy/hadoop network
+# lookups. These are the actual few-second costs of a cold JVM+Spark boot on
+# a throttled CPU -- config alone can't remove them, only trim the margins.
+os.environ["PYSPARK_SUBMIT_ARGS"] = (
+    "--conf spark.driver.extraJavaOptions="
+    "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xshare:off "
+    "pyspark-shell"
+)
 os.environ.setdefault("PYSPARK_PYTHON", sys.executable)
+os.environ["HADOOP_CONF_DIR"] = ""
+os.environ["SPARK_LOCAL_IP"] = "127.0.0.1"
+
 try:
     from pyspark.sql import SparkSession
 except ImportError:
@@ -44,6 +58,10 @@ spark = (
     .config("spark.sql.shuffle.partitions", "1")
     .config("spark.sql.adaptive.enabled", "false")
     .config("spark.driver.host", "127.0.0.1")
+    .config("spark.driver.bindAddress", "127.0.0.1")
+    .config("spark.sql.warehouse.dir", "/tmp/spark-warehouse")
+    .config("spark.hadoop.fs.defaultFS", "file:///")
+    .config("spark.serializer", "org.apache.spark.serializer.JavaSerializer")
     .getOrCreate()
 )
 spark.sparkContext.setLogLevel("ERROR")
